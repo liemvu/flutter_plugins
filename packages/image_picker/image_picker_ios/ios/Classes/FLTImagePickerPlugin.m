@@ -113,6 +113,10 @@ typedef NS_ENUM(NSInteger, ImagePickerClassType) { UIImagePickerClassType, PHPic
       [[PHPickerConfiguration alloc] initWithPhotoLibrary:PHPhotoLibrary.sharedPhotoLibrary];
   config.selectionLimit = context.maxImageCount;
   config.filter = [PHPickerFilter imagesFilter];
+  
+  if (@available(iOS 15, *)) {
+    config.selection = PHPickerConfigurationSelectionOrdered;
+  }
 
   _pickerViewController = [[PHPickerViewController alloc] initWithConfiguration:config];
   _pickerViewController.delegate = self;

@@ -117,10 +117,16 @@ typedef void (^GetSavedPath)(NSString *);
  */
 - (void)processImage:(UIImage *)localImage API_AVAILABLE(ios(14)) {
   PHAsset *originalAsset;
+  NSString *originalFileName;
+  NSMutableDictionary *metaData = [NSMutableDictionary dictionary];
   // Only if requested, fetch the full "PHAsset" metadata, which requires  "Photo Library Usage"
   // permissions.
   if (self.requestFullMetadata) {
     originalAsset = [FLTImagePickerPhotoAssetUtil getAssetFromPHPickerResult:self.result];
+    NSArray *resources = [PHAssetResource assetResourcesForAsset:originalAsset];
+    if(resources.count > 0) {
+      originalFileName = ((PHAssetResource*)resources[0]).originalFilename;
+    }
   }
 
   if (self.maxWidth != nil || self.maxHeight != nil) {
@@ -138,7 +144,8 @@ typedef void (^GetSavedPath)(NSString *);
                                        image:localImage
                                     maxWidth:self.maxWidth
                                    maxHeight:self.maxHeight
-                                imageQuality:self.desiredImageQuality];
+                                imageQuality:self.desiredImageQuality
+                                 originalFileName:originalFileName];
           [self completeOperationWithPath:savedPath];
         };
     if (@available(iOS 13.0, *)) {

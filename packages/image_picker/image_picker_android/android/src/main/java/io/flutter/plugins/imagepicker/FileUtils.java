@@ -25,7 +25,9 @@ package io.flutter.plugins.imagepicker;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
+import android.provider.OpenableColumns;
 import android.webkit.MimeTypeMap;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,6 +44,7 @@ class FileUtils {
     boolean success = false;
     try {
       String extension = getImageExtension(context, uri);
+      String originFileName = getImageOriginalName(context, uri);
       inputStream = context.getContentResolver().openInputStream(uri);
       file = File.createTempFile("image_picker", extension, context.getCacheDir());
       file.deleteOnExit();
@@ -49,6 +52,10 @@ class FileUtils {
       if (inputStream != null) {
         copy(inputStream, outputStream);
         success = true;
+
+        if(originFileName != null) {
+          ExifDataCopier.setImageDescription(file.getPath(), originFileName);  
+        }
       }
     } catch (IOException ignored) {
     } finally {
@@ -92,6 +99,39 @@ class FileUtils {
     }
 
     return "." + extension;
+  }
+
+  /** @return original file name. */
+  private static String getImageOriginalName(Context context, Uri uriImage) {
+    String result = null;
+    Cursor cursor = null;
+
+    try {
+      if (uriImage.getScheme().equals(ContentResolver.SCHEME_CONTENT)) {
+        cursor = context.getContentResolver().query(uriImage, null, null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+          int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+          result = cursor.getString(idx);
+        }
+
+      }
+    } catch (Exception e) {
+      result = null;
+    } finally {
+      cursor.close();
+    }
+
+    if (result == null || result.isEmpty()) {
+      //default file name
+      result = uriImage.getPath();
+      int cut = result.lastIndexOf('/');
+      if (cut != -1) {
+        result = result.substring(cut + 1);
+      }
+    }
+
+    return result;
   }
 
   private static void copy(InputStream in, OutputStream out) throws IOException {

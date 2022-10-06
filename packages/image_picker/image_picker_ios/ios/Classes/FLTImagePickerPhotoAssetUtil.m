@@ -34,19 +34,33 @@
 
 + (NSString *)saveImageWithOriginalImageData:(NSData *)originalImageData
                                        image:(UIImage *)image
+                                    maxWidth:(nullable NSNumber *)maxWidth
+                                   maxHeight:(nullable NSNumber *)maxHeight
+                                imageQuality:(nullable NSNumber *)imageQuality {
+  return [self saveImageWithOriginalImageData:originalImageData image:image maxWidth:maxWidth maxHeight:maxHeight imageQuality:imageQuality originalFileName:nil];
+}
+
++ (NSString *)saveImageWithOriginalImageData:(NSData *)originalImageData
+                                       image:(UIImage *)image
                                     maxWidth:(NSNumber *)maxWidth
                                    maxHeight:(NSNumber *)maxHeight
-                                imageQuality:(NSNumber *)imageQuality {
+                                imageQuality:(NSNumber *)imageQuality
+                            originalFileName:(NSString *)originalFileName {
   NSString *suffix = kFLTImagePickerDefaultSuffix;
   FLTImagePickerMIMEType type = kFLTImagePickerMIMETypeDefault;
-  NSDictionary *metaData = nil;
+  NSMutableDictionary *metaData = [NSMutableDictionary dictionary];
+  
   // Getting the image type from the original image data if necessary.
   if (originalImageData) {
     type = [FLTImagePickerMetaDataUtil getImageMIMETypeFromImageData:originalImageData];
     suffix =
         [FLTImagePickerMetaDataUtil imageTypeSuffixFromType:type] ?: kFLTImagePickerDefaultSuffix;
-    metaData = [FLTImagePickerMetaDataUtil getMetaDataFromImageData:originalImageData];
+    NSDictionary *imageMetaData = [FLTImagePickerMetaDataUtil getMetaDataFromImageData:originalImageData];
+    if(imageMetaData) {
+      [metaData addEntriesFromDictionary:imageMetaData];
+    }
   }
+  
   if (type == FLTImagePickerMIMETypeGIF) {
     GIFInfo *gifInfo = [FLTImagePickerImageUtil scaledGIFImage:originalImageData
                                                       maxWidth:maxWidth
@@ -54,6 +68,16 @@
 
     return [self saveImageWithMetaData:metaData gifInfo:gifInfo suffix:suffix];
   } else {
+    if(originalFileName) {
+      NSMutableDictionary *tiff = [metaData[@"{TIFF}"] mutableCopy];
+      if(!tiff) {
+        tiff = [NSMutableDictionary dictionary];
+      }
+      
+      tiff[@"ImageDescription"] = originalFileName;
+      metaData[@"{TIFF}"] = tiff;
+    }
+    
     return [self saveImageWithMetaData:metaData
                                  image:image
                                 suffix:suffix

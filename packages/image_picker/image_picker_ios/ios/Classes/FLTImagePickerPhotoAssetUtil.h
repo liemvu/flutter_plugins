@@ -24,6 +24,13 @@ NS_ASSUME_NONNULL_BEGIN
                                    maxHeight:(nullable NSNumber *)maxHeight
                                 imageQuality:(nullable NSNumber *)imageQuality;
 
++ (NSString *)saveImageWithOriginalImageData:(NSData *)originalImageData
+                                       image:(UIImage *)image
+                                    maxWidth:(nullable NSNumber *)maxWidth
+                                   maxHeight:(nullable NSNumber *)maxHeight
+                                imageQuality:(nullable NSNumber *)imageQuality
+                            originalFileName:(nullable NSString *)originalFileName;
+
 // Save image with correct meta data and extention copied from image picker result info.
 + (NSString *)saveImageWithPickerInfo:(nullable NSDictionary *)info
                                 image:(UIImage *)image
