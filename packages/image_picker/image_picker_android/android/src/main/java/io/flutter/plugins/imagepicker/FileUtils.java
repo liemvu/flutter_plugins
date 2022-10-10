@@ -46,16 +46,12 @@ class FileUtils {
       String extension = getImageExtension(context, uri);
       String originFileName = getImageOriginalName(context, uri);
       inputStream = context.getContentResolver().openInputStream(uri);
-      file = File.createTempFile("image_picker", extension, context.getCacheDir());
+      file = File.createTempFile(originFileName + "_image_picker_", extension, context.getCacheDir());
       file.deleteOnExit();
       outputStream = new FileOutputStream(file);
       if (inputStream != null) {
         copy(inputStream, outputStream);
         success = true;
-
-        if(originFileName != null) {
-          ExifDataCopier.setImageDescription(file.getPath(), originFileName);  
-        }
       }
     } catch (IOException ignored) {
     } finally {

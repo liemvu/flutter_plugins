@@ -10,16 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 
 class ExifDataCopier {
-  static void setImageDescription(String filePathOri, String imageDescription) {
-    try {
-      ExifInterface exif = new ExifInterface(filePathOri);
-      exif.setAttribute("ImageDescription", imageDescription);
-      exif.saveAttributes();
-    }  catch (Exception ex) {
-      Log.e("ExifDataCopier", "Error setImageDescription: " + ex);
-    }
-  }
-  
   void copyExif(String filePathOri, String filePathDest) {
     try {
       ExifInterface oldExif = new ExifInterface(filePathOri);

@@ -48,17 +48,14 @@
                             originalFileName:(NSString *)originalFileName {
   NSString *suffix = kFLTImagePickerDefaultSuffix;
   FLTImagePickerMIMEType type = kFLTImagePickerMIMETypeDefault;
-  NSMutableDictionary *metaData = [NSMutableDictionary dictionary];
+  NSDictionary *metaData;
   
   // Getting the image type from the original image data if necessary.
   if (originalImageData) {
     type = [FLTImagePickerMetaDataUtil getImageMIMETypeFromImageData:originalImageData];
     suffix =
         [FLTImagePickerMetaDataUtil imageTypeSuffixFromType:type] ?: kFLTImagePickerDefaultSuffix;
-    NSDictionary *imageMetaData = [FLTImagePickerMetaDataUtil getMetaDataFromImageData:originalImageData];
-    if(imageMetaData) {
-      [metaData addEntriesFromDictionary:imageMetaData];
-    }
+    metaData = [FLTImagePickerMetaDataUtil getMetaDataFromImageData:originalImageData];
   }
   
   if (type == FLTImagePickerMIMETypeGIF) {
@@ -66,20 +63,14 @@
                                                       maxWidth:maxWidth
                                                      maxHeight:maxHeight];
 
-    return [self saveImageWithMetaData:metaData gifInfo:gifInfo suffix:suffix];
+    return [self saveImageWithMetaData:metaData
+                               gifInfo:gifInfo
+                                prefix:originalFileName
+                                suffix:suffix];
   } else {
-    if(originalFileName) {
-      NSMutableDictionary *tiff = [metaData[@"{TIFF}"] mutableCopy];
-      if(!tiff) {
-        tiff = [NSMutableDictionary dictionary];
-      }
-      
-      tiff[@"ImageDescription"] = originalFileName;
-      metaData[@"{TIFF}"] = tiff;
-    }
-    
     return [self saveImageWithMetaData:metaData
                                  image:image
+                                prefix:originalFileName
                                 suffix:suffix
                                   type:type
                           imageQuality:imageQuality];
@@ -92,6 +83,7 @@
   NSDictionary *metaData = info[UIImagePickerControllerMediaMetadata];
   return [self saveImageWithMetaData:metaData
                                image:image
+                              prefix:nil
                               suffix:kFLTImagePickerDefaultSuffix
                                 type:kFLTImagePickerMIMETypeDefault
                         imageQuality:imageQuality];
@@ -99,13 +91,15 @@
 
 + (NSString *)saveImageWithMetaData:(NSDictionary *)metaData
                             gifInfo:(GIFInfo *)gifInfo
+                             prefix:(NSString *)prefix
                              suffix:(NSString *)suffix {
-  NSString *path = [self temporaryFilePath:suffix];
+  NSString *path = [self temporaryFilePath:prefix suffix:suffix];
   return [self saveImageWithMetaData:metaData gifInfo:gifInfo path:path];
 }
 
 + (NSString *)saveImageWithMetaData:(NSDictionary *)metaData
                               image:(UIImage *)image
+                             prefix:(NSString *)prefix
                              suffix:(NSString *)suffix
                                type:(FLTImagePickerMIMEType)type
                        imageQuality:(NSNumber *)imageQuality {
@@ -120,7 +114,7 @@
     }
   }
 
-  return [self createFile:data suffix:suffix];
+  return [self createFile:data prefix:prefix suffix:suffix];
 }
 
 + (NSString *)saveImageWithMetaData:(NSDictionary *)metaData
@@ -157,17 +151,24 @@
   return path;
 }
 
-+ (NSString *)temporaryFilePath:(NSString *)suffix {
++ (NSString *)temporaryFilePath: (NSString*) prefix suffix:(NSString *)suffix {
+  if(!prefix) {
+    prefix = @"";
+  }
+  
   NSString *fileExtension = [@"image_picker_%@" stringByAppendingString:suffix];
+  if(prefix) {
+    fileExtension = [NSString stringWithFormat:@"%@_%@", prefix, fileExtension];
+  }
   NSString *guid = [[NSProcessInfo processInfo] globallyUniqueString];
-  NSString *tmpFile = [NSString stringWithFormat:fileExtension, guid];
+  NSString *tmpFile = [NSString stringWithFormat:fileExtension, prefix, guid];
   NSString *tmpDirectory = NSTemporaryDirectory();
   NSString *tmpPath = [tmpDirectory stringByAppendingPathComponent:tmpFile];
   return tmpPath;
 }
 
-+ (NSString *)createFile:(NSData *)data suffix:(NSString *)suffix {
-  NSString *tmpPath = [self temporaryFilePath:suffix];
++ (NSString *)createFile:(NSData *)data prefix: (NSString *) prefix suffix:(NSString *)suffix {
+  NSString *tmpPath = [self temporaryFilePath:prefix suffix:suffix];
   if ([[NSFileManager defaultManager] createFileAtPath:tmpPath contents:data attributes:nil]) {
     return tmpPath;
   } else {
