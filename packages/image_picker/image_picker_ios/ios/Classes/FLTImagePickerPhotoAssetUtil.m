@@ -152,16 +152,12 @@
 }
 
 + (NSString *)temporaryFilePath: (NSString*) prefix suffix:(NSString *)suffix {
-  if(!prefix) {
-    prefix = @"";
-  }
-  
   NSString *fileExtension = [@"image_picker_%@" stringByAppendingString:suffix];
   if(prefix) {
     fileExtension = [NSString stringWithFormat:@"%@_%@", prefix, fileExtension];
   }
   NSString *guid = [[NSProcessInfo processInfo] globallyUniqueString];
-  NSString *tmpFile = [NSString stringWithFormat:fileExtension, prefix, guid];
+  NSString *tmpFile = [NSString stringWithFormat:fileExtension, guid];
   NSString *tmpDirectory = NSTemporaryDirectory();
   NSString *tmpPath = [tmpDirectory stringByAppendingPathComponent:tmpFile];
   return tmpPath;
